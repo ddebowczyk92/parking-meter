@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = ParkingMeterApplication)
 @AutoConfigureMockMvc
-class ParkingMeterControllerIntegrationSpec extends Specification {
+class ParkingMeterIntegrationSpec extends Specification {
 
     @Autowired
     ParkingMeterTicketRepository parkingMeterTicketRepository
