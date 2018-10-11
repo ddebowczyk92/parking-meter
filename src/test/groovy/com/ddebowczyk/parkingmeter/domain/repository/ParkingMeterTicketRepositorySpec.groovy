@@ -37,5 +37,9 @@ class ParkingMeterTicketRepositorySpec extends Specification {
         parkingMeterTicket.driverType == DriverType.REGULAR
     }
 
+    def cleanup() {
+        parkingMeterTicketRepository.deleteAll()
+    }
+
 }
 

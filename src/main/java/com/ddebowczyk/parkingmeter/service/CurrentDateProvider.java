@@ -2,7 +2,6 @@ package com.ddebowczyk.parkingmeter.service;
 
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Component
@@ -12,7 +11,4 @@ public class CurrentDateProvider {
         return LocalDateTime.now();
     }
 
-    public LocalDate getCurrentLocalDate() {
-        return LocalDate.now();
-    }
 }

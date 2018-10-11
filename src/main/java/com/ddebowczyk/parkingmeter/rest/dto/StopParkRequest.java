@@ -1,28 +1,24 @@
 package com.ddebowczyk.parkingmeter.rest.dto;
 
-import com.ddebowczyk.parkingmeter.domain.DriverType;
+import com.ddebowczyk.parkingmeter.domain.Currency;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.ToString;
 
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 
 @Getter
 @ToString
-public class StartParkRequest {
+public class StopParkRequest {
 
     @NotEmpty
     private final String licensePlateNumber;
-
-    @NotNull
-    private final DriverType driverType;
+    private final Currency currency;
 
     @JsonCreator
-    public StartParkRequest(@JsonProperty("licensePlateNumber") String licensePlateNumber,
-                            @JsonProperty("driverType") DriverType driverType) {
+    public StopParkRequest(@JsonProperty("licensePlateNumber") String licensePlateNumber, @JsonProperty("currency") Currency currency) {
         this.licensePlateNumber = licensePlateNumber;
-        this.driverType = driverType;
+        this.currency = currency;
     }
 }

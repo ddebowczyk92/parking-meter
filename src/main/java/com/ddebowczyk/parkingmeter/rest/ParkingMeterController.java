@@ -2,6 +2,8 @@ package com.ddebowczyk.parkingmeter.rest;
 
 import com.ddebowczyk.parkingmeter.rest.dto.StartParkRequest;
 import com.ddebowczyk.parkingmeter.rest.dto.StartParkResponse;
+import com.ddebowczyk.parkingmeter.rest.dto.StopParkRequest;
+import com.ddebowczyk.parkingmeter.rest.dto.StopParkResponse;
 import com.ddebowczyk.parkingmeter.service.ParkingMeterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +27,10 @@ public final class ParkingMeterController {
     public ResponseEntity<StartParkResponse> startParkingMeter(@RequestBody @Valid StartParkRequest request) {
         StartParkResponse response = parkingMeterService.startParkingMeter(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping(path = "/stop")
+    public StopParkResponse stopParkingMeter(@RequestBody @Valid StopParkRequest request) {
+        return parkingMeterService.stopParkingMeter(request);
     }
 }

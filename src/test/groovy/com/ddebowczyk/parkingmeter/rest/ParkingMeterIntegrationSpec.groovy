@@ -1,11 +1,15 @@
 package com.ddebowczyk.parkingmeter.rest
 
 import com.ddebowczyk.parkingmeter.ParkingMeterApplication
+import com.ddebowczyk.parkingmeter.domain.Currency
 import com.ddebowczyk.parkingmeter.domain.DriverType
 import com.ddebowczyk.parkingmeter.domain.ParkingMeterTicket
+import com.ddebowczyk.parkingmeter.domain.repository.ParkingChargePaymentRepository
 import com.ddebowczyk.parkingmeter.domain.repository.ParkingMeterTicketRepository
 import com.ddebowczyk.parkingmeter.rest.dto.StartParkRequest
 import com.ddebowczyk.parkingmeter.rest.dto.StartParkResponse
+import com.ddebowczyk.parkingmeter.rest.dto.StopParkRequest
+import com.ddebowczyk.parkingmeter.rest.dto.StopParkResponse
 import com.ddebowczyk.parkingmeter.service.CurrentDateProvider
 import com.fasterxml.jackson.databind.ObjectMapper
 import groovy.json.JsonOutput
@@ -36,6 +40,9 @@ class ParkingMeterIntegrationSpec extends Specification {
 
     @Autowired
     CurrentDateProvider currentDateProviderMock
+
+    @Autowired
+    ParkingChargePaymentRepository parkingChargePaymentRepository;
 
     @Autowired
     MockMvc mockMvc
@@ -77,6 +84,45 @@ class ParkingMeterIntegrationSpec extends Specification {
         startParkEntity.driverType == DriverType.REGULAR
     }
 
+    def "should stop parking meter"() {
+        given:
+        String licensePlateNumber = "XXX123"
+
+        and:
+        LocalDateTime startDateTime = LocalDateTime.of(2018, 10, 8, 12, 0)
+        LocalDateTime endDateTime = startDateTime.plusHours(1)
+        currentDateProviderMock.getCurrentLocalDateTime() >> endDateTime
+
+        and:
+        ParkingMeterTicket parkingMeterTicket = new ParkingMeterTicket(licensePlateNumber, startDateTime, DriverType.REGULAR)
+        parkingMeterTicketRepository.save(parkingMeterTicket)
+
+        and:
+        StopParkRequest stopParkRequest = new StopParkRequest(licensePlateNumber, null)
+
+        when:
+        def response = mockMvc.perform(post("/rest/parkingMeter/stop")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonOutput.toJson(stopParkRequest)))
+                .andReturn().response
+        then:
+        response.status == HttpStatus.OK.value()
+
+        and:
+        def responseJson = objectMapper.readValue(response.contentAsString, StopParkResponse)
+        responseJson.licensePlateNumber == licensePlateNumber
+        responseJson.parkingChargeWithCurrency == "3PLN"
+        responseJson.endDateTime == endDateTime
+
+        and:
+        def paymentList = parkingChargePaymentRepository.findByCreateDate(endDateTime.toLocalDate())
+        paymentList.size() == 1
+        def parkingChargePayment = paymentList.get(0)
+        parkingChargePayment.chargeAmount == new BigDecimal(3)
+        parkingChargePayment.currency == Currency.PLN
+        parkingChargePayment.createDate == endDateTime.toLocalDate()
+    }
+
     def "should return validation error when license plate number is empty"() {
         expect:
         mockMvc.perform(post("/rest/parkingMeter/start")
@@ -108,6 +154,31 @@ class ParkingMeterIntegrationSpec extends Specification {
                 .content(JsonOutput.toJson(new StartParkRequest(licensePlateNumber, DriverType.REGULAR))))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Vehicle with given license plate number " + licensePlateNumber + " already parked")))
+    }
+
+    def "should return validation error when vehicle didn't start parking meter"() {
+        given:
+        String licensePlateNumber = "WA666"
+
+        expect:
+        mockMvc.perform(post("/rest/parkingMeter/stop")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonOutput.toJson(new StopParkRequest(licensePlateNumber, null))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Vehicle with given license didn't start parking meter")))
+    }
+
+    def "should return validation error when stopping parking meter without license plate number"() {
+        expect:
+        mockMvc.perform(post("/rest/parkingMeter/stop")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonOutput.toJson(new StopParkRequest(null, null))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("License plate number cant be empty")))
+    }
+
+    def cleanup() {
+        parkingMeterTicketRepository.deleteAll()
     }
 
     @TestConfiguration
